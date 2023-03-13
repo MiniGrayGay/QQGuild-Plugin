@@ -4,12 +4,13 @@
 ## 安装
 ```
  git clone --depth=1 https://github.com/2y8e9h22/QQGuild-Plugin ./plugins/QQGuild-Plugin
+```
+```
  pnpm install -P
 ```
 
 ## 配置
 ```
- # ./plugins/QQGuild-Plugin/config/config.yaml
  # 频道机器人的 APPID
  appId: ""
  # 频道机器人的 TOKEN
