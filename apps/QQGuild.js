@@ -5,6 +5,7 @@ import lodash from "lodash"
 import yaml from "yaml"
 import fs from "node:fs"
 import path from "node:path"
+import url from "node:url"
 
 export class QQGuild extends Plugin {
     constructor() {
@@ -143,14 +144,30 @@ export class QQGuild extends Plugin {
         e.reply = async (m) => {
             let rMsg = { msg_id: msg.id }
 
-            let addImg = (i) => {
+            let addImg = (m) => {
                 if (Buffer.isBuffer(m.file)) {
-                    rMsg.file = i.file
-                } else if (typeof i.file === "string") {
-                    rMsg.file_image = i.file.replace(/^file:\/+/, "")
-                } else {
+                    rMsg.file = m.file
+                    return true
+                }
+
+                if (typeof m.file !== "string") {
                     return false
                 }
+
+                let p = m.file
+
+                if (/^file:/i.test(m.file)) {
+                    try {
+                        p = url.fileURLToPath(m.file)
+                    } catch {
+                        p = m.file.replace(/file:[\\\/]{2}/i, "")
+                        if (!fs.existsSync(p)) p = m.file.replace(/file:[\\\/]{3}/i, "")
+                    }
+                }
+
+                if (!fs.existsSync(p)) return false
+
+                rMsg.file_image = p
                 return true
             }
 
@@ -199,7 +216,6 @@ export class QQGuild extends Plugin {
             }
 
             logger.debug("[QQ频道插件] 发送消息.", m, rMsg)
-
             let rsp = await this.bot.postMsg(isDms ? msg.guild_id : msg.channel_id, rMsg, isDms)
             logger.debug("[QQ频道插件] 发送消息结果.", rsp)
         }
