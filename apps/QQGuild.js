@@ -14,13 +14,13 @@ export class QQGuild extends Plugin {
             rule: [
                 {
                     reg: "频道主",
-                    fnc: "owner"
+                    fnc: "频道主"
                 }
             ]
         })
     }
 
-    owner(e) {
+    频道主(e) {
         if (e.is_owner) {
             e.reply("频道主八嘎呀路，阿巴阿巴滴")
         } else {
@@ -47,12 +47,12 @@ export class QQGuild extends Plugin {
         }
 
         if (!config.appId?.length) {
-            logger.info("QQ频道插件：APPID 无效！")
+            logger.info("[QQ频道插件] APPID 无效！")
             return
         }
 
         if (!config.token?.length) {
-            logger.info("QQ频道插件：TOKEN 无效！")
+            logger.info("[QQ频道插件] TOKEN 无效！")
             return
         }
 
@@ -84,57 +84,57 @@ export class QQGuild extends Plugin {
                     this.hDmsDelete(msg.d)
                     return
                 default:
-                    logger.debug("QQ频道插件：收到消息(未处理).", msg)
+                    logger.debug("[QQ频道插件] 收到消息(未处理).", msg)
             }
         }, (info) => {
             this.bot.info = info.user
-            logger.info("QQ频道插件：连接成功. 机器人：", info.user.username)
+            logger.info("[QQ频道插件] 连接成功. 机器人：", info.user.username)
         }, (info) => {
-            logger.warn("QQ频道插件：连接失败！")
+            logger.warn("[QQ频道插件] 连接失败！")
         }, (info) => {
-            logger.warn("QQ频道插件：获取连接地址失败！")
+            logger.warn("[QQ频道插件] 获取连接地址失败！")
         })
     }
 
     async hMemberAdd(msg) {
-        logger.debug("QQ频道插件：频道.加入成员", msg)
+        logger.debug("[QQ频道插件] 频道.加入成员", msg)
         // TODO ........
     }
 
     async hMemberRemove(msg) {
-        logger.debug("QQ频道插件：频道.成员退出", msg)
+        logger.debug("[QQ频道插件] 频道.成员退出", msg)
         // TODO ........
     }
 
     async hMsgCreate(msg) {
-        logger.debug("QQ频道插件：子频道.收到消息", msg)
+        logger.debug("[QQ频道插件] 子频道.收到消息", msg)
         await this.callPlugs(msg)
     }
 
     async hMsgDelete(msg) {
-        logger.debug("QQ频道插件：子频道.撤回消息", msg)
+        logger.debug("[QQ频道插件] 子频道.撤回消息", msg)
         // TODO ........
     }
 
     async hDmsCreate(msg) {
-        logger.debug("QQ频道插件：私信.收到消息", msg)
+        logger.debug("[QQ频道插件] 私信.收到消息", msg)
         await this.callPlugs(msg, true)
     }
 
     async hDmsDelete(msg) {
-        logger.debug("QQ频道插件：私信.撤回消息", msg)
+        logger.debug("[QQ频道插件] 私信.撤回消息", msg)
         // TODO ........
     }
 
     async callPlugs(msg, isDms) {
         let e = this.makee(msg, isDms)
-        logger.debug("QQ频道插件：转制消息.", e)
+        logger.debug("[QQ频道插件] 转制消息.", e)
         if (e) await PluginsLoader.deal(e)
     }
 
     makee(msg, isDms) {
         if (!msg.content) {
-            logger.debug("QQ频道插件：跳过消息.", msg)
+            logger.debug("[QQ频道插件] 跳过消息.", msg)
             return
         }
 
@@ -180,28 +180,28 @@ export class QQGuild extends Plugin {
                                         break
                                     default:
                                         if (!addImg(x)) {
-                                            logger.debug("QQ频道插件：跳过回复消息转制.", x)
+                                            logger.debug("[QQ频道插件] 跳过回复消息转制.", x)
                                         }
                                 }
                             } else {
-                                logger.debug("QQ频道插件：跳过回复消息转制.", x)
+                                logger.debug("[QQ频道插件] 跳过回复消息转制.", x)
                             }
                         }
                         if (text.length > 0) rMsg.content = text
                     } else if (!addImg(m)) {
-                        logger.debug("QQ频道插件：跳过消息发送.", m)
+                        logger.debug("[QQ频道插件] 跳过消息发送.", m)
                         return
                     }
                     break
                 default:
-                    logger.debug("QQ频道插件：跳过消息发送.", m)
+                    logger.debug("[QQ频道插件] 跳过消息发送.", m)
                     return
             }
 
-            logger.debug("QQ频道插件：发送消息.", m, rMsg)
+            logger.debug("[QQ频道插件] 发送消息.", m, rMsg)
 
             let rsp = await this.bot.postMsg(isDms ? msg.guild_id : msg.channel_id, rMsg, isDms)
-            logger.debug("QQ频道插件：发送消息结果.", rsp)
+            logger.debug("[QQ频道插件] 发送消息结果.", rsp)
         }
 
         return e
