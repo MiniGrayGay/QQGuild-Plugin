@@ -1,0 +1,11 @@
+{
+  "name": "QQGuild-Plugin",
+  "version": "0.1.42",
+  "author": "萌新-🍓🍓",
+  "type": "module",
+  "dependencies": {
+    "lodash": "^4.17.21",
+    "ws": "^8.13.0",
+    "yaml": "^2.2.1"
+  }
+}
