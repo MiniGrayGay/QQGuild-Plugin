@@ -32,8 +32,8 @@ export class QQGuild extends Plugin {
         let { version, author } = JSON.parse(fs.readFileSync("./plugins/QQGuild-Plugin/package.json"))
         logger.info(`欢迎使用QQ频道插件.v${version} 编写者：${author}`)
 
-        let configPath = "./plugins/QQGuild-Plugin/config/"
-        let configFile = configPath + fs.existsSync(".bot.yaml") ? ".bot.yaml" : "bot.yaml"
+        let configFile = "./plugins/QQGuild-Plugin/config/.bot.yaml"
+        if (!fs.existsSync(configFile)) configFile = configFile.replace(".bot.yaml", "bot.yaml")
 
         let config = {
             ...yaml.parse(fs.readFileSync(configFile, "UTF-8")),
