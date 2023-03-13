@@ -142,7 +142,7 @@ export class QQGuild extends Plugin {
         let e = isDms ? this.makeePrivate(msg) : this.makeeGroup(msg)
 
         e.reply = async (m) => {
-            logger.debug("[QQ频道插件] 发送消息.", m)
+            logger.debug("[QQ频道插件] 回复消息.", m)
 
             let rMsg = { msg_id: msg.id }
 
@@ -216,13 +216,13 @@ export class QQGuild extends Plugin {
 
             if (content.length) rMsg.content = content
 
-            logger.debug("[QQ频道插件] 转制回复消息结果.", rMsg)
+            logger.debug("[QQ频道插件] 转制回复消息.", rMsg)
 
-            if ((() => { let i = 0; for (let _ in rMsg) i++ })() < 1) {
-                logger.debug("[QQ频道插件] 跳过消息发送.", m)
+            if ((() => { let i = 0; for (let _ in rMsg) i++ })() < 2) {
+                logger.debug("[QQ频道插件] 跳过消息回复.", m)
             } else {
                 let rsp = await this.bot.postMsg(isDms ? msg.guild_id : msg.channel_id, rMsg, isDms)
-                logger.debug("[QQ频道插件] 发送消息结果.", rsp)
+                logger.debug("[QQ频道插件] 回复消息结果.", rsp)
             }
         }
 
