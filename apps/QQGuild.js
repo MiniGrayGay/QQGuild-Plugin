@@ -1,13 +1,13 @@
 import Plugin from "../../../lib/plugins/plugin.js"
 import PluginsLoader from "../../../lib/plugins/loader.js"
 import GuildBot from "../lib/GuildBot.js"
-import lodash from "lodash"
 import yaml from "yaml"
 import fs from "node:fs"
 import path from "node:path"
 import url from "node:url"
 
 export class QQGuild extends Plugin {
+
     constructor() {
         super({
             name: "QQ频道插件",
@@ -94,6 +94,7 @@ export class QQGuild extends Plugin {
             logger.warn("[QQ频道插件] 连接失败！")
         }, (info) => {
             logger.warn("[QQ频道插件] 获取连接地址失败！")
+            logger.debug(info)
         })
     }
 
@@ -142,88 +143,93 @@ export class QQGuild extends Plugin {
         let e = isDms ? this.makeePrivate(msg) : this.makeeGroup(msg)
 
         e.reply = async (m) => {
+            logger.debug("[QQ频道插件] 发送消息.", m)
+
             let rMsg = { msg_id: msg.id }
 
-            let addImg = (m) => {
-                if (Buffer.isBuffer(m.file)) {
-                    rMsg.file = m.file
-                    return true
+            let addImg = (f) => {
+                if (Buffer.isBuffer(f)) {
+                    rMsg.file = f
+                    return
                 }
 
-                if (typeof m.file !== "string") {
+                if (typeof f !== "string") {
                     return false
                 }
 
-                let p = m.file
+                let p = f
 
-                if (/^file:/i.test(m.file)) {
+                if (/^file:/i.test(f)) {
                     try {
-                        p = url.fileURLToPath(m.file)
+                        p = url.fileURLToPath(f)
                     } catch {
-                        p = m.file.replace(/file:[\\\/]{2}/i, "")
-                        if (!fs.existsSync(p)) p = m.file.replace(/file:[\\\/]{3}/i, "")
+                        p = f.replace(/^file:[\\\/]{2}/i, "")
+                        if (!fs.existsSync(p)) p = f.replace(/^file:[\\\/]{3}/i, "")
                     }
                 }
 
                 if (!fs.existsSync(p)) return false
 
                 rMsg.file_image = p
-                return true
             }
 
-            switch (typeof m) {
-                case "string":
-                    rMsg.content = m
-                    break
-                case "number":
-                    rMsg.content = `${m}`
-                    break
-                case "object":
-                    if (Array.isArray(m)) {
-                        let text = ""
-                        for (let x of m) {
-                            if (typeof x === "string") {
-                                text += x
-                            } else if (lodash.isObject(x)){
-                                switch (x.type) {
-                                    case "text":
-                                        text += x.text
-                                        break
-                                    case "at":
-                                        text += `<@!${msg.author.id}>`
-                                        break
-                                    case "face":
-                                        text += `<emoji:${x.id}>`
-                                        break
-                                    default:
-                                        if (!addImg(x)) {
-                                            logger.debug("[QQ频道插件] 跳过回复消息转制.", x)
-                                        }
+            let addMsg = (m) => {
+                let content = ""
+                switch (typeof m) {
+                    case "string":
+                        content += m
+                        break
+                    case "number":
+                        content += `${m}`
+                        break
+                    case "object":
+                        switch (m.type) {
+                            case "text":
+                                content += m.text
+                                break
+                            case "face":
+                                content += `<emoji:${m.id}>`
+                                break
+                            case "at":
+                                content += m.qq === parseInt(e.user_id) ? `<@!${e.user_id}>` : "@某某人"
+                                break
+                            case "image":
+                                if (addImg(m.file) === false) {
+                                    logger.debug("[QQ频道插件] 跳过回复消息转制(图片).", m)
                                 }
-                            } else {
-                                logger.debug("[QQ频道插件] 跳过回复消息转制.", x)
-                            }
+                                break
+                            default:
+                                if (Array.isArray(m)) {
+                                    for (let v of m) content += addMsg(v)
+                                } else {
+                                    logger.debug("[QQ频道插件] 跳过回复消息转制(无法识别).", m)
+                                }
                         }
-                        if (text.length > 0) rMsg.content = text
-                    } else if (!addImg(m)) {
-                        logger.debug("[QQ频道插件] 跳过消息发送.", m)
-                        return
-                    }
-                    break
-                default:
-                    logger.debug("[QQ频道插件] 跳过消息发送.", m)
-                    return
+                        break
+                    default:
+                        logger.debug("[QQ频道插件] 跳过回复消息转制(无法识别).", m)
+                }
+
+                return content
             }
 
-            logger.debug("[QQ频道插件] 发送消息.", m, rMsg)
-            let rsp = await this.bot.postMsg(isDms ? msg.guild_id : msg.channel_id, rMsg, isDms)
-            logger.debug("[QQ频道插件] 发送消息结果.", rsp)
+            let content = addMsg(m)
+
+            if (content.length) rMsg.content = content
+
+            logger.debug("[QQ频道插件] 转制回复消息结果.", rMsg)
+
+            if ((() => { let i = 0; for (let _ in rMsg) i++ })() < 1) {
+                logger.debug("[QQ频道插件] 跳过消息发送.", m)
+            } else {
+                let rsp = await this.bot.postMsg(isDms ? msg.guild_id : msg.channel_id, rMsg, isDms)
+                logger.debug("[QQ频道插件] 发送消息结果.", rsp)
+            }
         }
 
         return e
     }
 
-    // 频道私信，转制成QQ私聊
     makeePrivate(msg) {
         let time = parseInt(Date.parse(msg.timestamp) / 1000)
         let message = this.makeeMessage(msg.content)
@@ -242,7 +248,6 @@ export class QQGuild extends Plugin {
         }
     }
 
-    // 子频道消息，转制成QQ群聊
     makeeGroup(msg) {
         let time = parseInt(Date.parse(msg.timestamp) / 1000)
         let role = msg.member.roles.includes("4") ? "owner" : msg.member.roles.includes("2") ? "admin" : "member"
@@ -261,9 +266,6 @@ export class QQGuild extends Plugin {
                 card: msg.member.nick,
                 role
             },
-            member: {
-                is_owner
-            },
             is_owner,
             group_id: msg.guild_id,
             group_name: "QQ频道"
@@ -272,28 +274,41 @@ export class QQGuild extends Plugin {
 
     makeeMessage(content) {
         let raw_message = content
+        let rex_message = content
         let message = []
 
-        let at = content.match(/\<@!\d+>/g)
-        if (at) at.forEach((at) => {
-            let qq = at.match(/\d+/)[0]
-            let text = qq == this.bot.info.id ? `@${this.bot.info.username}` : "@欧尼酱"
-            raw_message = raw_message.replace(at, text)
-            message.push({ type: "at", qq, text })
-        })
+        let rex = /(?<t>\<((?<at>@!)|(?<face>emoji):)(?<id>\d+)>)/
 
-        let emoji = content.match(/\<emoji:\d+>/g)
-        if (emoji) emoji.forEach((emoji) => {
-            let id = emoji.match(/\d+/)[0]
-            let text = "[表情]"
-            raw_message = raw_message.replace(emoji, text)
-            message.push({ type: "face", id, text })
-        })
+        while (rex) {
+            let r = rex.exec(rex_message)
 
-        let text = content.replace(/\<(@!|emoji:)\d+>/g, "O|z").split("O|z")
-        if (text) text.forEach((text) => {
-            if (text.length) message.push({ type: "text", text })
-        })
+            if (!r) {
+                if (rex_message.length) message.push({ type: "text", text: rex_message})
+                break
+            }
+
+            if (r.index) {
+                message.push({ type: "text", text: rex_message.slice(0, r.index)})
+            }
+
+            if (r.groups.at) {
+                let qq = r.groups.id
+                let text = "@某某人"
+                if (r.groups.id === this.bot.info.id) {
+                    qq = Bot.uin
+                    text = `@${this.bot.info.username}`
+                }
+                raw_message = raw_message.replace(r.groups.t, text)
+                message.push({ type: "at", qq, text})
+            }
+
+            if (r.groups.face) {
+                raw_message = raw_message.replace(r.groups.t, "[表情]")
+                message.push({ type: "face", id: r.groups.id, text: "表情" })
+            }
+
+            rex_message = rex_message.slice(r.index + r.groups.t.length)
+        }
 
         return { message, raw_message }
     }
