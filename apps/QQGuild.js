@@ -130,7 +130,6 @@ export class QQGuild extends Plugin {
 
     async callPlugs(msg, isDms) {
         let e = this.makee(msg, isDms)
-        logger.debug("[QQ频道插件] 转制消息.", e)
         if (e) await PluginsLoader.deal(e)
     }
 
@@ -226,6 +225,8 @@ export class QQGuild extends Plugin {
                 logger.debug("[QQ频道插件] 发送消息结果.", rsp)
             }
         }
+
+        logger.debug("[QQ频道插件] 转制消息.", e)
 
         return e
     }
