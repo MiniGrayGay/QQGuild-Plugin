@@ -1,6 +1,7 @@
 import Plugin from "../../../lib/plugins/plugin.js"
 import PluginsLoader from "../../../lib/plugins/loader.js"
 import GuildBot from "../lib/GuildBot.js"
+import { getFaceName } from "../lib/FaceMap.js"
 import yaml from "yaml"
 import fs from "node:fs"
 import path from "node:path"
@@ -304,8 +305,9 @@ export class QQGuild extends Plugin {
             }
 
             if (r.groups.face) {
-                raw_message = raw_message.replace(r.groups.t, "[表情]")
-                message.push({ type: "face", id: r.groups.id, text: "表情" })
+                let text = getFaceName(r.groups.id)
+                raw_message = raw_message.replace(r.groups.t, `[${text}]`)
+                message.push({ type: "face", id: r.groups.id, text })
             }
 
             rex_message = rex_message.slice(r.index + r.groups.t.length)
